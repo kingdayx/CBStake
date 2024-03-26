@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CBmod.sol";
 import "./CBBPP.sol";
 import "./CBNPP.sol";
 
-contract CBNFTStakingVault is Ownable, CBNFTBurnTrackingPlugin {
+contract CBNFTStakingVault is Ownable, CBNFTBurnTrackingPlugin, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+    using Address for address;
+
     struct Vault {
         address nftContract;
         uint256 stakingPeriod;
@@ -30,6 +35,8 @@ contract CBNFTStakingVault is Ownable, CBNFTBurnTrackingPlugin {
     }
 
     Vault[] public vaults;
+    IERC20 public token;
+    address public burnAddress;
     mapping(uint256 => Stake) public stakes;
     uint256 public totalStakes;
     CBBPP public cbbpp; // Declare the CBBPP contract instance
@@ -159,7 +166,7 @@ contract CBNFTStakingVault is Ownable, CBNFTBurnTrackingPlugin {
             if (!stake.claimed) {
                 Vault storage vault = vaults[stake.vaultId];
                 if (block.timestamp >= stake.stakedAt + vault.burnPeriod) {
-                    executeAutoBurn(erc6900Account, vault.nftContract, stake.stakeInfo.tokenId, stake.vaultId);
+                    executeAutoBurn(erc6900Account, vault.nftContract, stake.stakeInfo.tokenId);
                     stake.claimed = true;
                 }
             }
