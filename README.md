@@ -1,0 +1,2 @@
+# CBStake
+staker
